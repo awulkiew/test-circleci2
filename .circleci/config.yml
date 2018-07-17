@@ -1,0 +1,117 @@
+version: 2
+jobs:
+  test:
+    docker:
+      - image: circleci/ruby:2.3
+    steps:
+      - checkout
+      - run: mkdir coverage-local
+      - persist_to_workspace:
+          root: ~/project
+          paths: coverage-local
+  test1:
+    docker:
+      - image: circleci/ruby:2.3
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ~/project
+      - run: gcov --version || true
+      - run: g++ --version || true
+      - run: g++ --coverage test1.cpp
+      - run: ./a.out
+      - run: ls -lah
+      - run: mv *.gcda coverage-local && mv *.gcno coverage-local
+      - persist_to_workspace:
+          root: ~/project
+          paths: coverage-local
+  test2:
+    docker:
+      - image: circleci/ruby:2.3
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ~/project
+      - run: gcov --version || true
+      - run: g++ --version || true
+      - run: g++ --coverage test2.cpp
+      - run: ./a.out
+      - run: ls -lah
+      - run: mv *.gcda coverage-local && mv *.gcno coverage-local
+      - persist_to_workspace:
+          root: ~/project
+          paths: coverage-local
+  test3:
+    docker:
+      - image: circleci/ruby:2.3
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ~/project
+      - run: gcov --version || true
+      - run: g++ --version || true
+      - run: g++ --coverage test3.cpp
+      - run: ./a.out
+      - run: ls -lah
+      - run: mv *.gcda coverage-local && mv *.gcno coverage-local
+      - persist_to_workspace:
+          root: ~/project
+          paths: coverage-local
+  gather:
+    docker:
+      - image: circleci/ruby:2.3
+    steps:
+      - checkout
+      - run: gem install coveralls-lcov
+      - run: sudo apt-get install jq
+#      - run: curl -fLO https://sourceforge.net/projects/ltp/files/Coverage%20Analysis/LCOV-1.12/lcov-1.12.tar.gz || curl -fLO https://downloads.sourceforge.net/project/ltp/Coverage%20Analysis/LCOV-1.12/lcov-1.12.tar.gz || wget http://sourceforge.mirrorservice.org/l/project/lt/ltp/Coverage%20Analysis/LCOV-1.12/lcov-1.12.tar.gz || wget -O lcov-1.12.tar.gz http://launchpad.net/ubuntu/+archive/primary/+files/lcov_1.12.orig.tar.gz
+#      - run: tar xvzf lcov-1.12.tar.gz
+#      - run: cd lcov-1.12 && sudo make install
+      - run: sudo apt-get install lcov
+      - run: pwd
+      - run: lcov --version || true
+      - run: gcov --version || true
+      - run: g++ --version || true
+      - run: coveralls-lcov --version || true
+      - run: jq --version || true
+      - run: curl --version || true
+
+      - attach_workspace:
+          at: ~/project
+      - run: ls -lah coverage-local
+      - run: lcov --gcov-tool=gcov --rc lcov_branch_coverage=1 --directory coverage-local --base-directory . --capture --output-file coverage-local/coverage.info
+#      - run: lcov --gcov-tool=gcov --rc lcov_branch_coverage=1 --remove coverage-local/coverage.info "/usr*" "*/libs/geometry/*" -o coverage-local/coverage.info
+
+#Coveralls
+      - run: coveralls-lcov --repo-token=$COVERALLS_REPO_TOKEN -v -n coverage-local/coverage.info > coverage-local/coverage.json
+# not possible with workspaces
+# | .service_number = \"$CIRCLE_BUILD_NUM\"
+      - run: jq -c ".service_name = \"circle-ci\" | .git .branch =\"$CIRCLE_BRANCH\"" coverage-local/coverage.json > coverage-local/processed.json
+      - run: ls -lah coverage-local
+      - run: curl --retry 3 -F "json_file=@coverage-local/processed.json" 'https://coveralls.io/api/v1/jobs'
+
+#Codecov
+      - run: curl -s https://codecov.io/bash > .codecov
+      - run: chmod +x .codecov
+      - run: ./.codecov --help
+      - run: ./.codecov -t $CODECOV_TOKEN -f coverage-local/coverage.info -x gcov
+
+workflows:
+  version: 2
+  test_workflow:
+    jobs:
+      - test
+      - test1:
+          requires:
+            - test
+      - test2:
+          requires:
+            - test
+      - test3:
+          requires:
+            - test
+      - gather:
+          requires:
+            - test1
+            - test2
+            - test3
