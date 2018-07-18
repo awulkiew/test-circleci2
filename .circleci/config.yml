@@ -58,7 +58,8 @@ jobs:
       - attach_workspace:
           at: ~/project
       - run: ls -lah shared-coverage
-      - run: lcov --gcov-tool=gcov --rc lcov_branch_coverage=1 --directory shared-coverage --base-directory . --capture --output-file shared-coverage/coverage.info
+      - run: lcov --gcov-tool=gcov --directory shared-coverage --base-directory . --capture --output-file shared-coverage/coverage.info
+#      - run: lcov --gcov-tool=gcov --rc lcov_branch_coverage=1 --directory shared-coverage --base-directory . --capture --output-file shared-coverage/coverage.info
 #      - run: lcov --gcov-tool=gcov --rc lcov_branch_coverage=1 --remove shared-coverage/coverage.info "/usr*" "*/libs/geometry/*" -o shared-coverage/coverage.info
 
 #Coveralls
