@@ -8,6 +8,7 @@ jobs:
       - checkout
       - run: apt-get update
       - run: apt-get install jq
+      - run: apt-get install rubygems-integration || apt-get install rubygems
       - run: mkdir shared-coverage
       - persist_to_workspace:
           root: ~/project
