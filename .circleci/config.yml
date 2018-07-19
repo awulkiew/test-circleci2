@@ -2,9 +2,12 @@ version: 2
 jobs:
   test:
     docker:
-      - image: circleci/ruby:2.3
+#      - image: circleci/ruby:2.3
+      - image: gcc:4.9
     steps:
       - checkout
+      - run: apt-get update
+      - run: apt-get install jq
       - run: mkdir shared-coverage
       - persist_to_workspace:
           root: ~/project
